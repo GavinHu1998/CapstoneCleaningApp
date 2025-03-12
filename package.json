@@ -25,6 +25,7 @@
     "expo-haptics": "~14.0.1",
     "expo-linking": "~7.0.5",
     "expo-router": "~4.0.17",
+    "expo-secure-store": "~14.0.1",
     "expo-splash-screen": "~0.29.21",
     "expo-status-bar": "~2.0.1",
     "expo-symbols": "~0.2.2",
@@ -39,7 +40,10 @@
     "react-native-screens": "~4.4.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "expo-secure-store": "~14.0.1"
+    "stream-chat-expo": "^6.6.7",
+    "@react-native-community/netinfo": "11.4.1",
+    "expo-image-manipulator": "~13.0.6",
+    "react-native-svg": "15.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
