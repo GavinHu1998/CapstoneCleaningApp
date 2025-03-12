@@ -1,46 +1,48 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "react-native";
-
+import { ChatProvider } from "../chat/ChatProvider";
 
 const _layout = () => {
-  const colorScheme = useColorScheme(); // for dark/ light mode
+  const colorScheme = useColorScheme(); 
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#D62A1E", // active selection
-        tabBarInactiveTintColor: "gray", // inactive
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Dashbord",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
-          ),
+    <ChatProvider>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: "#D62A1E",
+          tabBarInactiveTintColor: "gray",
         }}
-      />
-      <Tabs.Screen
-        name="message"
-        options={{
-          title: "Message",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="porfile"
-        options={{
-          title: "Porfile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="briefcase-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Dashboard",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="list" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="message"
+          options={{
+            title: "Message",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="chatbubble-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="briefcase-outline" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+    </ChatProvider>
   );
 };
 
