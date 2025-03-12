@@ -4,13 +4,13 @@ import { useColorScheme } from "react-native";
 
 
 const _layout = () => {
-  const colorScheme = useColorScheme(); // 适配深色/浅色模式
+  const colorScheme = useColorScheme(); // for dark/ light mode
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#D62A1E", // 选中时的颜色
-        tabBarInactiveTintColor: "gray", // 未选中时的颜色
+        tabBarActiveTintColor: "#D62A1E", // active selection
+        tabBarInactiveTintColor: "gray", // inactive
       }}
     >
       <Tabs.Screen
