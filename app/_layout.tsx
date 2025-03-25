@@ -33,11 +33,20 @@ const _layout = () => {
           }}
         />
         <Tabs.Screen
+          name="login"
+          options={{
+            title: "Login",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="enter-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="profile"
           options={{
             title: "Profile",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="briefcase-outline" size={size} color={color} />
+              <Ionicons name="person-outline" size={size} color={color} />
             ),
           }}
         />

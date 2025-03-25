@@ -4,6 +4,8 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native
 import * as SecureStore from 'expo-secure-store';
 import { useIsFocused } from '@react-navigation/native';
  
+
+
 const API_URL = "https://us-west-1c.zuperpro.com/api/jobs";
  
 const ItemCard = ({ item, onViewDetails }) => {
