@@ -1,42 +1,50 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
-import * as SecureStore from 'expo-secure-store';
-import { useIsFocused } from '@react-navigation/native';
- 
-
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { useIsFocused } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 const API_URL = "https://us-west-1c.zuperpro.com/api/jobs";
- 
+
 const ItemCard = ({ item, onViewDetails }) => {
   return (
     <View style={styles.card}>
       <View style={styles.cardContent}>
         <View style={styles.mainContent}>
           <Text style={styles.title}>{item.job_title}</Text>
-          
+
           {/* Job created time */}
           <Text style={styles.description}>
-            Created Time: {new Date(item.job_status[0].created_at).toLocaleDateString()}
+            Created Time:{" "}
+            {new Date(item.job_status[0].created_at).toLocaleDateString()}
           </Text>
- 
+
           {/* Customer Name */}
           <View style={styles.row}>
             <Text style={styles.label}>Customer Name:</Text>
             <Text style={styles.value}>
-              {item.customer.customer_first_name} {item.customer.customer_last_name}
+              {item.customer.customer_first_name}{" "}
+              {item.customer.customer_last_name}
             </Text>
           </View>
- 
+
           {/* Assigned worker */}
           <View style={styles.row}>
             <Text style={styles.label}>Worker Name:</Text>
             <Text style={styles.value}>
-              {item.assigned_to[0].user.first_name} {item.assigned_to[0].user.last_name}
+              {item.assigned_to[0].user.first_name}{" "}
+              {item.assigned_to[0].user.last_name}
             </Text>
           </View>
         </View>
-        
+
         <TouchableOpacity
           style={styles.detailButton}
           onPress={() => onViewDetails(item)}
@@ -47,42 +55,41 @@ const ItemCard = ({ item, onViewDetails }) => {
     </View>
   );
 };
- 
- 
+
 const Dashboard = ({ navigation }) => {
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const isFocused = useIsFocused();
-  
+
   useEffect(() => {
     fetchData();
   }, [isFocused]);
-  
+
   const fetchData = async () => {
     // Reset states before fetching
     setLoading(true);
     setError(null);
-    
+
     try {
-      const authToken = await SecureStore.getItemAsync('auth_token');
+      const authToken = await SecureStore.getItemAsync("auth_token");
       if (!authToken) {
         setError("Authentication token not found. Please login again.");
         setLoading(false);
         return;
       }
-      
+
       const response = await fetch(API_URL, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           // "x-api-key": API_KEY,
-          'authorization': `Bearer ${authToken}`,
+          authorization: `Bearer ${authToken}`,
         },
       });
- 
+
       const result = await response.json();
-      
+
       if (response.status === 200) {
         if (result && result.data && Array.isArray(result.data)) {
           setData(result.data);
@@ -94,7 +101,11 @@ const Dashboard = ({ navigation }) => {
         setError("Bad request (400)");
         setData([]);
       } else {
-        setError(`Error: ${response.status}${result.message ? ` - ${result.message}` : ''}`);
+        setError(
+          `Error: ${response.status}${
+            result.message ? ` - ${result.message}` : ""
+          }`
+        );
         setData([]);
       }
     } catch (err) {
@@ -105,27 +116,28 @@ const Dashboard = ({ navigation }) => {
       setLoading(false);
     }
   };
- 
+
   const handleRefresh = async () => {
     // Force a complete refresh by resetting all states
     setData([]);
     setError(null);
     setLoading(true);
-    
+
     // Add a small delay to ensure state updates before fetching
     setTimeout(() => {
       fetchData();
     }, 100);
   };
- 
+
+  const router = useRouter();
+
   const handleViewDetails = (item) => {
-    // Navigate to a details screen with the selected job
-    // You'll need to implement a JobDetails screen
-    // navigation.navigate('JobDetails', { job: item });
-    console.log("View details for job:", item.id);
-    // Replace the console.log with actual navigation when you have a details screen
+    router.push({
+      pathname: "/jobdetails",
+      params: { job: JSON.stringify(item) },
+    });
   };
- 
+
   if (error) {
     return (
       <View style={styles.container}>
@@ -142,7 +154,7 @@ const Dashboard = ({ navigation }) => {
       </View>
     );
   }
- 
+
   if (!data || data.length === 0) {
     return (
       <View style={styles.container}>
@@ -159,20 +171,24 @@ const Dashboard = ({ navigation }) => {
       </View>
     );
   }
- 
+
   return (
     <View style={styles.container}>
       <FlatList
         data={data}
-        keyExtractor={(item, index) => item.id ? item.id.toString() : `item-${index}`}
-        renderItem={({ item }) => <ItemCard item={item} onViewDetails={handleViewDetails} />}
+        keyExtractor={(item, index) =>
+          item.id ? item.id.toString() : `item-${index}`
+        }
+        renderItem={({ item }) => (
+          <ItemCard item={item} onViewDetails={handleViewDetails} />
+        )}
         refreshing={loading}
         onRefresh={handleRefresh}
       />
     </View>
   );
 };
- 
+
 // StyleSheet
 const styles = StyleSheet.create({
   container: {
@@ -264,5 +280,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
- 
+
 export default Dashboard;
