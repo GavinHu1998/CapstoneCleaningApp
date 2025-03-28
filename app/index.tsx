@@ -1,172 +1,105 @@
-import React from "react";
-import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
+import React, { useState, useEffect } from "react";
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Modal,
+  ActivityIndicator 
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { useIsFocused } from "@react-navigation/native";
-import { useRouter } from "expo-router";
+import JobDetails from "@/components/jobdetails";
 
 const API_URL = "https://us-west-1c.zuperpro.com/api/jobs";
 
-const ItemCard = ({ item, onViewDetails }) => {
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardContent}>
-        <View style={styles.mainContent}>
-          <Text style={styles.title}>{item.job_title}</Text>
-
-          {/* Job created time */}
-          <Text style={styles.description}>
-            Created Time:{" "}
-            {new Date(item.job_status[0].created_at).toLocaleDateString()}
-          </Text>
-
-          {/* Customer Name */}
-          <View style={styles.row}>
-            <Text style={styles.label}>Customer Name:</Text>
-            <Text style={styles.value}>
-              {item.customer.customer_first_name}{" "}
-              {item.customer.customer_last_name}
-            </Text>
-          </View>
-
-          {/* Assigned worker */}
-          <View style={styles.row}>
-            <Text style={styles.label}>Worker Name:</Text>
-            <Text style={styles.value}>
-              {item.assigned_to[0].user.first_name}{" "}
-              {item.assigned_to[0].user.last_name}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.detailButton}
-          onPress={() => onViewDetails(item)}
-        >
-          <Text style={styles.detailButtonText}>Details</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
-
-const Dashboard = ({ navigation }) => {
-  const [data, setData] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+const Dashboard = () => {
+  const [data, setData] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
   const isFocused = useIsFocused();
 
-  useEffect(() => {
-    fetchData();
-  }, [isFocused]);
-
   const fetchData = async () => {
-    // Reset states before fetching
-    setLoading(true);
-    setError(null);
-
     try {
       const authToken = await SecureStore.getItemAsync("auth_token");
+      
       if (!authToken) {
-        setError("Authentication token not found. Please login again.");
-        setLoading(false);
-        return;
+        throw new Error("Authentication required");
       }
 
       const response = await fetch(API_URL, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          // "x-api-key": API_KEY,
-          authorization: `Bearer ${authToken}`,
-        },
+          "Authorization": `Bearer ${authToken}`
+        }
       });
 
-      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
 
-      if (response.status === 200) {
-        if (result && result.data && Array.isArray(result.data)) {
-          setData(result.data);
-        } else {
-          setData([]);
-          setError("No data available");
-        }
-      } else if (response.status === 400) {
-        setError("Bad request (400)");
-        setData([]);
+      const result = await response.json();
+      
+      if (result?.data && Array.isArray(result.data)) {
+        setData(result.data);
       } else {
-        setError(
-          `Error: ${response.status}${
-            result.message ? ` - ${result.message}` : ""
-          }`
-        );
-        setData([]);
+        throw new Error("Invalid data format");
       }
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Network error occurred. Please check your connection.");
+      setError(err.message);
       setData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRefresh = async () => {
-    // Force a complete refresh by resetting all states
-    setData([]);
-    setError(null);
+  useEffect(() => {
+    if (isFocused) fetchData();
+  }, [isFocused]);
+
+  const handleRefresh = () => {
     setLoading(true);
-
-    // Add a small delay to ensure state updates before fetching
-    setTimeout(() => {
-      fetchData();
-    }, 100);
+    fetchData();
   };
 
-  const router = useRouter();
-
-  const handleViewDetails = (item) => {
-    router.push({
-      pathname: "/jobdetails",
-      params: { job: JSON.stringify(item) },
-    });
+  const handleViewDetails = (item: any) => {
+    setSelectedJob(item);
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#D62A1E" />
+      </View>
+    );
+  }
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.center]}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
-          disabled={loading}
         >
-          <Text style={styles.refreshButtonText}>
-            {loading ? "Refreshing..." : "Refresh"}
-          </Text>
+          <Text style={styles.refreshButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  if (!data || data.length === 0) {
+  if (data.length === 0) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.emptyText}>No data</Text>
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.emptyText}>No jobs found</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
-          disabled={loading}
         >
-          <Text style={styles.refreshButtonText}>
-            {loading ? "Refreshing..." : "Refresh"}
-          </Text>
+          <Text style={styles.refreshButtonText}>Refresh</Text>
         </TouchableOpacity>
       </View>
     );
@@ -176,108 +109,98 @@ const Dashboard = ({ navigation }) => {
     <View style={styles.container}>
       <FlatList
         data={data}
-        keyExtractor={(item, index) =>
-          item.id ? item.id.toString() : `item-${index}`
-        }
+        keyExtractor={(item) => item?.id?.toString() || `item-${Math.random()}`}
         renderItem={({ item }) => (
-          <ItemCard item={item} onViewDetails={handleViewDetails} />
+          <JobCard item={item} onPressDetails={handleViewDetails} />
         )}
         refreshing={loading}
         onRefresh={handleRefresh}
       />
+
+      <Modal
+        visible={!!selectedJob}
+        animationType="slide"
+        onRequestClose={() => setSelectedJob(null)}
+      >
+        {selectedJob && (
+          <JobDetails 
+            job={selectedJob} 
+            onClose={() => setSelectedJob(null)} 
+          />
+        )}
+      </Modal>
     </View>
   );
 };
 
-// StyleSheet
+const JobCard = ({ item, onPressDetails }: { item: any, onPressDetails: (item: any) => void }) => {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{item.job_title}</Text>
+      <Text>Client: {item.customer.customer_first_name}</Text>
+      <TouchableOpacity
+        style={styles.detailButton}
+        onPress={() => onPressDetails(item)}
+      >
+        <Text style={styles.buttonText}>View Details</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    backgroundColor: "#f5f5f5",
+    padding: 15,
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: 'white',
     padding: 15,
-    marginVertical: 8,
+    marginBottom: 10,
     borderRadius: 8,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  cardContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  mainContent: {
-    flex: 1,
-  },
-  title: {
+  cardTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-  },
-  description: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 5,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    marginRight: 5,
-  },
-  value: {
-    fontSize: 14,
-    color: "#666",
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
   detailButton: {
-    backgroundColor: "#075099",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginLeft: 10,
-    alignSelf: "center",
+    backgroundColor: '#075099',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: 'center',
   },
-  detailButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
   },
   errorText: {
+    color: 'red',
     fontSize: 16,
-    color: "red",
-    textAlign: "center",
-    marginTop: 20,
     marginBottom: 20,
   },
   emptyText: {
     fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 20,
     marginBottom: 20,
   },
   refreshButton: {
-    backgroundColor: "#007BFF",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    alignSelf: "center",
-    marginTop: 10,
+    backgroundColor: '#D62A1E',
+    padding: 12,
+    borderRadius: 5,
   },
   refreshButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    color: 'white',
+    fontWeight: '600',
   },
 });
 
