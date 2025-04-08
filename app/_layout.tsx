@@ -1,13 +1,12 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "react-native";
-import { ChatProvider } from "../chat/ChatProvider";
 
 const _layout = () => {
-  const colorScheme = useColorScheme(); 
+  const colorScheme = useColorScheme();
 
   return (
-    <ChatProvider>
+    <>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: "#D62A1E",
@@ -17,27 +16,30 @@ const _layout = () => {
         <Tabs.Screen
           name="index"
           options={{
+            title: "Login",
+
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="enter-outline" size={size} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="dashboard"
+          options={{
             title: "Dashboard",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="list" size={size} color={color} />
             ),
+
           }}
         />
         <Tabs.Screen
-          name="message"
+          name="addJob"
           options={{
-            title: "Message",
+            title: "addJob",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="chatbubble-outline" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="login"
-          options={{
-            title: "Login",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="enter-outline" size={size} color={color} />
+              <Ionicons name="add-circle-outline" size={size} color={color} />
             ),
           }}
         />
@@ -51,7 +53,8 @@ const _layout = () => {
           }}
         />
       </Tabs>
-    </ChatProvider>
+    </>
+
   );
 };
 

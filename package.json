@@ -43,7 +43,9 @@
     "stream-chat-expo": "^6.6.7",
     "@react-native-community/netinfo": "11.4.1",
     "expo-image-manipulator": "~13.0.6",
-    "react-native-svg": "15.8.0"
+    "react-native-svg": "15.8.0",
+    "@react-native-picker/picker": "2.9.0",
+    "@react-native-community/datetimepicker": "8.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

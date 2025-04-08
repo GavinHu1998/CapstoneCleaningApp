@@ -18,6 +18,7 @@ const Profile = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [hasToken, setHasToken] = useState(false);
     const navigation = useNavigation();
  
     const companyLinks = [
@@ -33,6 +34,11 @@ const Profile = () => {
     const fetchUserData = useCallback(async () => {
         try {
             setIsLoading(true);
+            
+            // Check if auth token exists
+            const authToken = await SecureStore.getItemAsync('auth_token');
+            setHasToken(!!authToken);
+            
             const [
                 fetchedEmail,
                 fetchedRole,
@@ -62,26 +68,31 @@ const Profile = () => {
             setRefreshing(false);
         }
     }, []);
-    const handleLogout = () => {
-        try {
-          SecureStore.deleteItemAsync('auth_token');
-          SecureStore.deleteItemAsync('email');
-          SecureStore.deleteItemAsync('role');
-          SecureStore.deleteItemAsync('firstName');
-          SecureStore.deleteItemAsync('lastName');
-          SecureStore.deleteItemAsync('proPic');
-          alert('logout successfully');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'login' }]
-          });
-   
-   
-        } catch (error) {
-          console.error("Failed to remove token", error);
+    
+    const handleAuthAction = () => {
+        if (hasToken) {
+            // Logout logic
+            try {
+                SecureStore.deleteItemAsync('auth_token');
+                SecureStore.deleteItemAsync('email');
+                SecureStore.deleteItemAsync('role');
+                SecureStore.deleteItemAsync('firstName');
+                SecureStore.deleteItemAsync('lastName');
+                SecureStore.deleteItemAsync('proPic');
+                alert('Logged out successfully');
+                setHasToken(false);
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'index' }]
+                });
+            } catch (error) {
+                console.error("Failed to remove token", error);
+            }
+        } else {
+            // Login logic - navigate to login page
+            navigation.navigate('index');
         }
-   
-      }
+    }
  
     // Fetch data on component mount or when focused
     useEffect(() => {
@@ -148,8 +159,8 @@ const Profile = () => {
         if (!userData.email) {
             return (
                 <View style={styles.userInfoContainer}>
-                    <Text style={styles.userInfoError}>No user information available</Text>
-                    <Text style={styles.userInfoErrorSub}>Please log in or sync your profile</Text>
+                    {/* <Text style={styles.userInfoError}>No user information available</Text> */}
+                    <Text style={styles.userInfoErrorSub}>Log in to check more information</Text>
                 </View>
             );
         }
@@ -182,7 +193,7 @@ const Profile = () => {
                     <Text style={styles.name}>
                         {userData.firstName && userData.lastName
                             ? `${userData.firstName} ${userData.lastName}`
-                            : 'User Profile'}
+                            : 'Unauthenticated State'}
                     </Text>
  
                     {renderUserInfo()}
@@ -201,11 +212,11 @@ const Profile = () => {
                     ))}
                 </View>
                 <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={handleLogout}
+                    style={[styles.authButton, hasToken ? styles.logoutButton : styles.loginButton]}
+                    onPress={handleAuthAction}
                 >
-                    <Text style={styles.logoutButtonText}>
-                        Logout
+                    <Text style={styles.authButtonText}>
+                        {hasToken ? 'Logout' : 'Jump To Login Page'}
                     </Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -320,20 +331,25 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         letterSpacing: -0.3
     },
-    logoutButton: {
-        backgroundColor: '#D62A1E',
+    authButton: {
         height: 55,
         width: '90%',
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 10,
-      },
-    logoutButtonText: {
+    },
+    logoutButton: {
+        backgroundColor: '#D62A1E',
+    },
+    loginButton: {
+        backgroundColor: '#007BFF', // Green color for login
+    },
+    authButtonText: {
         color: '#FFF',
         fontSize: 16,
         fontWeight: '600',
-      }
+    }
 });
  
 export default Profile;

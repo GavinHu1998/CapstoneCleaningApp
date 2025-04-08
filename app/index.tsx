@@ -1,207 +1,314 @@
-import React, { useState, useEffect } from "react";
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Modal,
-  ActivityIndicator 
-} from "react-native";
-import * as SecureStore from "expo-secure-store";
-import { useIsFocused } from "@react-navigation/native";
-import JobDetails from "@/components/jobdetails";
+import React, { useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Image
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const API_URL = "https://us-west-1c.zuperpro.com/api/jobs";
+const LoginScreen = () => {
+  const [formData, setFormData] = useState({
+    company_login_name: 'Services-Pro',
+    email: 'l.fan637@mybvc.ca',
+    password: 'test1234'
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+   const navigation = useNavigation();
 
-const Dashboard = () => {
-  const [data, setData] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
-  const isFocused = useIsFocused();
-
-  const fetchData = async () => {
+  const handleChange = (name, value) => {
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+  const handleLogout = () => {
     try {
-      const authToken = await SecureStore.getItemAsync("auth_token");
-      
-      if (!authToken) {
-        throw new Error("Authentication required");
-      }
+      SecureStore.deleteItemAsync('auth_token');
+      SecureStore.deleteItemAsync('email');
+      SecureStore.deleteItemAsync('role');
+      SecureStore.deleteItemAsync('firstName');
+      SecureStore.deleteItemAsync('lastName');
+      SecureStore.deleteItemAsync('proPic');
+      alert('logout successfully');
 
-      const response = await fetch(API_URL, {
-        method: "GET",
+    } catch (error) {
+      console.error("Failed to remove token", error);
+    }
+
+  }
+
+  const handleLogin = async () => {  // Made async for SecureStore
+    // Input validation
+    if (!formData.company_login_name.trim()) {
+      alert('Please enter your company login name');
+      return;
+    }
+    if (!formData.email.trim()) {
+      alert('Please enter your email');
+      return;
+    }
+    if (!formData.password.trim()) {
+      alert('Please enter your password');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('https://us-west-1c.zuperpro.com/api/user/login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
       });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
+      const data = await response.json();
 
-      const result = await response.json();
-      
-      if (result?.data && Array.isArray(result.data)) {
-        setData(result.data);
-      } else {
-        throw new Error("Invalid data format");
+      // Handle different status codes
+      switch (response.status) {
+        case 200:
+          // Successful login - store the auth_token
+          await SecureStore.setItemAsync('auth_token', data.auth_token);
+          await SecureStore.setItemAsync('email', data.user.email);
+          await SecureStore.setItemAsync('role', data.user.role);
+          await SecureStore.setItemAsync('firstName', data.user.first_name);
+          await SecureStore.setItemAsync('lastName', data.user.last_name);
+          await SecureStore.setItemAsync('proPic', data.user.profile_picture);
+
+          setIsLoading(false);
+          console.log('Success:', data);
+          alert('Login successful!');
+          // You might want to navigate to another screen here
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'dashboard' }]
+          });
+          break;
+
+        case 401:
+          setIsLoading(false);
+          alert('Unauthorized: Invalid credentials');
+          break;
+
+        case 500:
+          setIsLoading(false);
+          alert('Server error. Please try again later.');
+          break;
+
+        default:
+          setIsLoading(false);
+          alert('Unexpected error occurred');
+          break;
       }
-    } catch (err) {
-      setError(err.message);
-      setData([]);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Error:', error);
+      alert('Login failed. Please check your connection and try again.');
     }
   };
 
-  useEffect(() => {
-    if (isFocused) fetchData();
-  }, [isFocused]);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    fetchData();
-  };
-
-  const handleViewDetails = (item: any) => {
-    setSelectedJob(item);
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#D62A1E" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={handleRefresh}
-        >
-          <Text style={styles.refreshButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.emptyText}>No jobs found</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={handleRefresh}
-        >
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item?.id?.toString() || `item-${Math.random()}`}
-        renderItem={({ item }) => (
-          <JobCard item={item} onPressDetails={handleViewDetails} />
-        )}
-        refreshing={loading}
-        onRefresh={handleRefresh}
-      />
-
-      <Modal
-        visible={!!selectedJob}
-        animationType="slide"
-        onRequestClose={() => setSelectedJob(null)}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
       >
-        {selectedJob && (
-          <JobDetails 
-            job={selectedJob} 
-            onClose={() => setSelectedJob(null)} 
-          />
-        )}
-      </Modal>
-    </View>
-  );
-};
+        <ScrollView contentContainerStyle={styles.scrollView}>
+          <View style={styles.headerContainer}>
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={{ width: 200, height: 200 }}
+            />
+            {/* <Text style={styles.headerTitle}>Welcome Back</Text> */}
+          </View>
 
-const JobCard = ({ item, onPressDetails }: { item: any, onPressDetails: (item: any) => void }) => {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{item.job_title}</Text>
-      <Text>Client: {item.customer.customer_first_name}</Text>
-      <TouchableOpacity
-        style={styles.detailButton}
-        onPress={() => onPressDetails(item)}
-      >
-        <Text style={styles.buttonText}>View Details</Text>
-      </TouchableOpacity>
-    </View>
+          <View style={styles.formContainer}>
+            {/* Company Login Name Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Company Login Name</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter company login name"
+                  value={formData.company_login_name}
+                  onChangeText={(value) => handleChange('company_login_name', value)}
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            {/* Email Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChangeText={(value) => handleChange('email', value)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChangeText={(value) => handleChange('password', value)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={24}
+                    color="#666"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Login Button */}
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.loginButtonText}>
+                {isLoading ? 'Logging in...' : 'Log In'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Logout Button */}
+            {/* <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              disabled={isLoading}
+            >
+              <Text style={styles.logoutButtonText}>
+                Logout
+              </Text>
+            </TouchableOpacity> */}
+            
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    backgroundColor: '#F5F7FA',
   },
-  center: {
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  headerContainer: {
+    marginTop: 60,
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 8,
+  },
+
+  formContainer: {
+    width: '100%',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    height: 55,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#333',
+  },
+  passwordInput: {
+    paddingRight: 50,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 16,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  loginButton: {
+    backgroundColor: '#075099',
+    height: 55,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  card: {
-    backgroundColor: 'white',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  detailButton: {
-    backgroundColor: '#075099',
-    padding: 10,
-    borderRadius: 5,
     marginTop: 10,
-    alignItems: 'center',
   },
-  buttonText: {
-    color: 'white',
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
   },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  refreshButton: {
+  logoutButton: {
     backgroundColor: '#D62A1E',
-    padding: 12,
-    borderRadius: 5,
+    height: 55,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
   },
-  refreshButtonText: {
-    color: 'white',
+  logoutButtonText: {
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
 
-export default Dashboard;
+export default LoginScreen;
