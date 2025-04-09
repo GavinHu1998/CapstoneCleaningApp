@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from "react-native";
 import * as SecureStore from 'expo-secure-store';
 import { useIsFocused } from '@react-navigation/native';
@@ -64,6 +63,7 @@ const Dashboard = ({ navigation }) => {
   const [subOption, setSubOption] = useState('');
   const [subOptionsData, setSubOptionsData] = useState([]);
   const [filterParams, setFilterParams] = useState({});
+  const [customerOptions, setCustomerOptions] = useState([]); // For customer filter options
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -100,6 +100,23 @@ const Dashboard = ({ navigation }) => {
       if (response.status === 200) {
         if (result && result.data && Array.isArray(result.data)) {
           setData(result.data);
+          // Populate customer options based on the fetched data
+          const customers = result.data.map((item) => {
+            const customer = item.customer;
+            if (customer) {
+              return {
+                uid: customer.customer_uid,
+                name: `${customer.customer_first_name} ${customer.customer_last_name}`,
+              };
+            }
+            return null;
+          }).filter(customer => customer !== null);
+
+          // Remove duplicates based on customer UID
+          const uniqueCustomers = Array.from(new Set(customers.map(c => c.uid)))
+            .map(uid => customers.find(c => c.uid === uid));
+
+          setCustomerOptions(uniqueCustomers);
         } else {
           setData([]);
           setError("No data available");
@@ -157,6 +174,14 @@ const Dashboard = ({ navigation }) => {
 
       // Set default value for subOption (selecting the first option automatically)
       setSubOption('URGENT');
+    } else if (option === 'customer') {
+      // Customer option has already been handled by setting `customerOptions`
+      newSubOptionsData = customerOptions.map(customer => ({
+        label: customer.name,
+        value: customer.uid,
+      }));
+
+      setSubOption('');
     }
 
     setSubOptionsData(newSubOptionsData);
@@ -172,6 +197,10 @@ const Dashboard = ({ navigation }) => {
     // Build filter params when the submit button is pressed
     if (selectedOption === 'priority' && subOption) {
       newFilterParams = { ...newFilterParams, 'filter.priority': subOption };
+    }
+
+    if (selectedOption === 'customer' && subOption) {
+      newFilterParams = { ...newFilterParams, 'filter.customer': subOption };
     }
 
     setFilterParams(newFilterParams);  // Update filter params on submit
@@ -250,6 +279,7 @@ const Dashboard = ({ navigation }) => {
         >
           <Picker.Item label="Filter by..." value="filter" />
           <Picker.Item label="Priority" value="priority" />
+          <Picker.Item label="Customer" value="customer" />
         </Picker>
       </View>
 
@@ -303,13 +333,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
- },
+  },
   resetButton: {
     backgroundColor: "#ff5733",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
- },
+  },
   buttonText: {
     color: "white",
     fontSize: 14,
@@ -321,7 +351,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     justifyContent: 'center',
     alignItems: 'center',
- },
+  },
   card: {
     backgroundColor: "#fff",
     padding: 15,
@@ -332,12 +362,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
- },
+  },
   cardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
- },
+  },
   mainContent: {
     flex: 1,
   },
@@ -354,13 +384,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 5,
- },
+  },
   label: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#333",
     marginRight: 5,
- },
+  },
   value: {
     fontSize: 14,
     color: "#666",
@@ -372,7 +402,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginLeft: 10,
     alignSelf: "center",
- },
+  },
   detailButtonText: {
     color: "white",
     fontSize: 14,
@@ -389,7 +419,7 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     marginTop: 20,
- },
+  },
   noDataImage: {
     width: '100%',
     height: 300,
@@ -407,11 +437,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
- },
+  },
 });
 
 export default Dashboard;
-
 // import { View, Text } from 'react-native'
 // import React from 'react'
 
