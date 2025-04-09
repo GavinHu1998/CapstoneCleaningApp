@@ -52,6 +52,16 @@ const _layout = () => {
             ),
           }}
         />
+
+        <Tabs.Screen
+          name="temp"
+          options={{
+            title: "blah",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="text" size={size} color={color} />
+            ),
+          }}
+        />
       </Tabs>
     </>
 
