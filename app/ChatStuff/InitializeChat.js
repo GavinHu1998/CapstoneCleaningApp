@@ -1,15 +1,16 @@
 import { useEffect } from "react";
 import { StreamChat } from 'stream-chat';
 import { API_KEY, userId, userName, userToken } from './chatConfigInfo';
-//import { useCreateChatClient } from 'stream-chat-react-native';
+import { useCreateChatClient } from 'stream-chat-expo';
+
 
 const user = {
     id: userId,
     name: userName,
   };
   export const chatClient = StreamChat.getInstance(API_KEY);
-  // const chatClient = useCreateChatClient({
-  //       apiKey: chatApiKey,
+  // export const chatClient = useCreateChatClient({
+  //       apiKey: API_KEY,
   //       userData: user,
   //       tokenOrProvider: userToken,
   //     });
@@ -26,7 +27,8 @@ export const useChatClient = () => {
       } 
       catch (error) {
         console.error("Stream Chat connection error:", error);
-      }};
+      }
+    };
     }, 
     []);
 
