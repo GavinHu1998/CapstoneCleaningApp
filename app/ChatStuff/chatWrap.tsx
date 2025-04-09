@@ -33,3 +33,5 @@ const user = {
           </OverlayProvider>
         );
       };
+
+      export default ChatWrapper

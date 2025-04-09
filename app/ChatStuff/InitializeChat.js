@@ -36,3 +36,5 @@ export const useChatClient = () => {
         clientIsReady
     }
 }
+
+export default useChatClient

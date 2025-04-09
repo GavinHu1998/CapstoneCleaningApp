@@ -98,7 +98,10 @@ const test = () => {
       <ChatWrapper>
       <WrapInAppContext>
         <SafeAreaView style={{ flex: 1 }}>  
-          
+          <Stack.Navigator>
+            <Stack.Screen name="channelListScreen" component={ChannelListScreen}/>
+            <Stack.Screen name="channelScreen" component={ChannelScreen}/>
+          </Stack.Navigator>
         </SafeAreaView>
       </WrapInAppContext>
       </ChatWrapper>
