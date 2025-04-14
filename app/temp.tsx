@@ -4,10 +4,9 @@ import { Chat, OverlayProvider, ChannelList, Channel, useCreateChatClient, Messa
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "react-native";
 import { chatClient, useChatClient } from "./ChatStuff/InitializeChat";
-import { WrapInAppContext } from "./ChatStuff/chatContext"
+import { useAppContext, WrapInAppContext } from "./ChatStuff/chatContext"
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-//import { userId } from "./ChatStuff/chatConfigInfo"
 import { GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import { API_KEY, userId, chatUserName, userToken } from './ChatStuff/chatConfigInfo';
 import { StreamChatGenerics } from '../types';
@@ -20,12 +19,31 @@ const Stack = createStackNavigator();
 const test = () => {
 
 
+  // const ChannelListScreen = props => {
+  //   const { navigation } = props;
+  //   const { setChannel } = useAppContext();
+  //   return (
+  //     <ChannelList
+  //       onSelect={(channel) => {
+  //         setChannel(channel);
+  //         navigation.navigate('ChannelScreen');
+  //       }
+  //     }
+  //     filters={filters}
+  //     sort={sort}
+  //     options={options}
+  //     />
+  //   );
+  // };
   const ChannelListScreen = props => {
+    
     return (
       <ChannelList
       onSelect={(channel) => {
         const {navigation} = props;
-        navigation.navigate('ChannelScreen', { channel })
+        console.log(channel);
+        navigation.navigate('channelScreen', { channel });
+        //navigation.navigate('channelScreen', { channelId: channel.id });
       }}
       filters={filters}
       sort={sort}
@@ -44,10 +62,36 @@ const test = () => {
     state: true,
     watch: true,
   };
+  // const ChannelScreen = (props) => {
+  //   const { channel, setChannel } = useAppContext();
+  //   console.log(props);
+  //   if (!channel) {
+  //     return (
+  //       <SafeAreaView>
+  //         <Text>Loading chat ...</Text>
+  //       </SafeAreaView>
+  //     );
+  //   }
+  
+  //   return (
+  //     <Channel channel={channel}>
+  //       <MessageList />
+  //       <MessageInput />
+  //     </Channel>
+  //   );
+  // };
   const ChannelScreen = props => {
     const { route } = props;
     const { params: { channel } } = route;
+    console.log(channel);
 
+  if (!channel) {
+    return (
+      <SafeAreaView>
+        <Text>Loading chat ...</Text>
+      </SafeAreaView>
+    );
+  }
     return (
       <Channel channel = {channel}>
         <MessageList/>
@@ -56,56 +100,21 @@ const test = () => {
     )
   }
 
-  const constructChat = () => {
-  
-      const readyToConstruct = useChatClient();
-
-    if (!readyToConstruct) {
-      return (
-        <SafeAreaView>
-          <Text>Loading chat ...</Text>
-        </SafeAreaView>
-      );
-    }
-  
-    // const user = {
-    //   id: userId,
-    //   name: chatUserName,
-    // };
-    
-    //   const chatClient: StreamChat<StreamChatGenerics> = useCreateChatClient({
-    //     apiKey: API_KEY,
-    //     userData: user,
-    //     tokenOrProvider: userToken,
-    //   });
-    
-
-    return (
-    <Chat client={chatClient}>
-      <Stack.Navigator>
-        <Stack.Screen name="ChannelListScreen" component={ChannelListScreen} />
-        <Stack.Screen name="ChannelScreen" component={ChannelScreen} />
-      </Stack.Navigator>
-    </Chat>      
-    );
-  };
-
-
  return (
   <SafeAreaProvider>
   <GestureHandlerRootView>
-    <OverlayProvider>
+<WrapInAppContext>
       <ChatWrapper>
-      <WrapInAppContext>
-        <SafeAreaView style={{ flex: 1 }}>  
-          <Stack.Navigator>
+        
+        <SafeAreaView style={{ flex: 1 }}>
+        <Stack.Navigator>
             <Stack.Screen name="channelListScreen" component={ChannelListScreen}/>
             <Stack.Screen name="channelScreen" component={ChannelScreen}/>
           </Stack.Navigator>
         </SafeAreaView>
-      </WrapInAppContext>
+        
       </ChatWrapper>
-    </OverlayProvider>
+</WrapInAppContext>
   </GestureHandlerRootView>
   </SafeAreaProvider>
   );

@@ -9,7 +9,7 @@ const user = {
       name: chatUserName,
     };
 
-      export const ChatWrapper = ({ children }: PropsWithChildren<{}>) => {
+    export const ChatWrapper = ({ children }: PropsWithChildren<{}>) => {
 
         const chatClient = useCreateChatClient({
             apiKey: API_KEY,

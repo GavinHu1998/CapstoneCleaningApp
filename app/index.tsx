@@ -14,7 +14,7 @@ import {
   Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
   const [formData, setFormData] = useState({
@@ -120,7 +120,6 @@ const LoginScreen = () => {
   };
 
 
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -213,7 +212,6 @@ const LoginScreen = () => {
                 Logout
               </Text>
             </TouchableOpacity> */}
-            
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

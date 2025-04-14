@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+ import React, { useState } from "react";
 
 export const AppContext = React.createContext({
   channel: null,
@@ -10,7 +10,7 @@ export const AppContext = React.createContext({
 export const WrapInAppContext = ({ children }) => {
   const [channel, setChannel] = useState();
   const [thread, setThread] = useState();
-
+  
   return (
     <AppContext.Provider value={{ channel, setChannel, thread, setThread }}>
       {children}
