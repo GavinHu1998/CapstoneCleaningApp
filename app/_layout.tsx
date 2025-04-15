@@ -54,7 +54,7 @@ const _layout = () => {
         />
 
         <Tabs.Screen
-          name="temp"
+          name="chat"
           options={{
             title: "Chat",
             tabBarIcon: ({ color, size }) => (
